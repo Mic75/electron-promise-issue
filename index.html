@@ -9,37 +9,41 @@
     <input id="input" placeholder="key,value" autofocus/>
     <button id="add">Add</button>
 </div>
-<div id="content"></div>
+<div id="content-sync"></div>
+<div id="content-promise"></div>
 <script>
-var promiseStore = require('electron').remote.require('./promise-store'),
+  var promiseStore = require('electron').remote.require('./promise-store'),
     inputElem = document.getElementById('input'),
     addButton = document.getElementById('add');
 
-function refreshStore(){
-  promiseStore.getItems().then(store => {
-    document.getElementById('content').innerHTML = JSON.stringify(store);
-  });
-}
+  function refreshStore() {
+    document.getElementById('content-sync').innerHTML = `Sync: ${JSON.stringify(promiseStore.getItems())}`;
 
-function addItem(){
-  const [ ,key, value] = inputElem.value.match(/(.*)[,\s-.](.*)/);
-  promiseStore.addItem(key, value);
-  refreshStore();
-}
+    promiseStore.getItemsPromise().then((store) => {
+      document.getElementById('content-promise').innerHTML = `From Promise: ${JSON.stringify(store)}`;
+    });
 
-window.addEventListener('load', () => {
-  refreshStore();
-});
-
-inputElem.addEventListener('keypress', (event) => {
-  if (event.charCode === 13){
-    addItem();
   }
-});
 
-addButton.addEventListener('click', () => {
-  addItem();
-});
+  function addItem() {
+    const [, key, value] = inputElem.value.match(/(.*)[,\s-.](.*)/);
+    promiseStore.addItem(key, value);
+    refreshStore();
+  }
+
+  window.addEventListener('load', () => {
+    refreshStore();
+  });
+
+  inputElem.addEventListener('keypress', (event) => {
+    if (event.charCode === 13) {
+      addItem();
+    }
+  });
+
+  addButton.addEventListener('click', () => {
+    addItem();
+  });
 
 </script>
 </body>

@@ -4,8 +4,12 @@ let petStore = {
 };
 
 const storeInterface = {
-  getItems(){
+  getItemsPromise(){
     return Promise.resolve(petStore);
+  },
+
+  getItems(){
+    return petStore;
   },
 
   addItem(key, value){
