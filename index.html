@@ -6,7 +6,7 @@
 </head>
 <body>
 <div>
-    <input id="input" type="text" placeholder="key,value" />
+    <input id="input" placeholder="key,value" autofocus/>
     <button id="add">Add</button>
 </div>
 <div id="content"></div>
@@ -21,15 +21,24 @@ function refreshStore(){
   });
 }
 
+function addItem(){
+  const [ ,key, value] = inputElem.value.match(/(.*)[,\s-.](.*)/);
+  promiseStore.addItem(key, value);
+  refreshStore();
+}
+
 window.addEventListener('load', () => {
   refreshStore();
 });
 
-addButton.addEventListener('click', () => {
-  const [ ,key, value] = inputElem.value.match(/(.*)[,\s-.](.*)/);
+inputElem.addEventListener('keypress', (event) => {
+  if (event.charCode === 13){
+    addItem();
+  }
+});
 
-  promiseStore.addItem(key, value);
-  refreshStore();
+addButton.addEventListener('click', () => {
+  addItem();
 });
 
 </script>
