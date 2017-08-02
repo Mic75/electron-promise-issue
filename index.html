@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Hello World!</title>
+</head>
+<body>
+<div>
+    <input id="input" type="text" placeholder="key,value" />
+    <button id="add">Add</button>
+</div>
+<div id="content"></div>
+<script>
+var promiseStore = require('electron').remote.require('./promise-store'),
+    inputElem = document.getElementById('input'),
+    addButton = document.getElementById('add');
+
+function refreshStore(){
+  promiseStore.getItems().then(store => {
+    document.getElementById('content').innerHTML = JSON.stringify(store);
+  });
+}
+
+window.addEventListener('load', () => {
+  refreshStore();
+});
+
+addButton.addEventListener('click', () => {
+  const [ ,key, value] = inputElem.value.match(/(.*),(.*)/);
+
+  promiseStore.addItem(key, value);
+  refreshStore();
+});
+
+</script>
+</body>
+</html>
