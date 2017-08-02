@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Hello World!</title>
+    <title>Electron Promise Issues</title>
 </head>
 <body>
 <div>
@@ -26,7 +26,7 @@ window.addEventListener('load', () => {
 });
 
 addButton.addEventListener('click', () => {
-  const [ ,key, value] = inputElem.value.match(/(.*),(.*)/);
+  const [ ,key, value] = inputElem.value.match(/(.*)[,\s-.](.*)/);
 
   promiseStore.addItem(key, value);
   refreshStore();
