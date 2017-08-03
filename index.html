@@ -1,50 +1,102 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="UTF-8">
-    <title>Electron Promise Issues</title>
+  <meta charset="UTF-8">
+  <title>Electron Promise Issues</title>
 </head>
+
 <body>
-<div>
+  <h1>Manual Update</h1>
+  <div>
     <input id="input" placeholder="key,value" autofocus/>
     <button id="add">Add</button>
-</div>
-<div id="content-sync"></div>
-<div id="content-promise"></div>
-<script>
-  var promiseStore = require('electron').remote.require('./promise-store'),
-    inputElem = document.getElementById('input'),
-    addButton = document.getElementById('add');
+  </div>
+  <div id="content-sync"></div>
+  <div id="content-promise"></div>
 
-  function refreshStore() {
-    document.getElementById('content-sync').innerHTML = `Sync: ${JSON.stringify(promiseStore.getItems())}`;
+  <h1>Auto Update</h1>
+  <div><button id="autoUpdate">Start</button></div>
+  <div id="content-auto-ref"></div>
+  <div id="content-auto-value"></div>
+  <script>
+    let heroSet = require('electron').remote.require('./hero-set'),
+      inputElem = document.getElementById('input'),
+      addButton = document.getElementById('add'),
+      startButton = document.getElementById('autoUpdate');
 
-    promiseStore.getItemsPromise().then((store) => {
-      document.getElementById('content-promise').innerHTML = `From Promise: ${JSON.stringify(store)}`;
+    /*
+     * Neither get the synchronous nor the promise version will update the displayed content
+     * This is because renderProcess.remote do not update the reference of the object
+     * returned by getHeroes.
+     *
+     * Note: this as nothing to do with promise, as both sync and promise are not updated
+     */
+    function refreshSetManually() {
+      document.getElementById('content-sync').innerHTML = `Sync: ${JSON.stringify(heroSet.getHeroes())}`;
+
+      heroSet.getHeroesPromise().then((store) => {
+        document.getElementById('content-promise').innerHTML = `From Promise: ${JSON.stringify(store)}`;
+      });
+
+    }
+
+    /*
+     * Called every 2sec to illustrate that object fetched through electron remote
+     * have their properties updated only if retrieved by copy from the main process.
+     */
+    function refreshSetAutomatically() {
+
+      /* Even if object is change in the main process, re-fetching it does not update in the BrowserWindow */
+      document.getElementById('content-auto-ref').innerHTML = `By ref: ${JSON.stringify(heroSet.getHeroes())}`;
+
+      /* Only way to get the up-to-date version of the remote object is to fetch it by value.
+       * See implementation of getHeroesByValue in the promise-store module for details
+       */
+      document.getElementById('content-auto-value').innerHTML = `By value: ${JSON.stringify(heroSet.getHeroesByValue())}`;
+    }
+
+    /* This updates the object in the main process though */
+    function addHero() {
+      const [, key, value] = inputElem.value.match(/(.*)[,\s-.](.*)/);
+      heroSet.addHero(key, value);
+      refreshSetManually();
+    }
+
+    window.addEventListener('load', () => {
+      refreshSetManually();
+      refreshSetAutomatically();
     });
 
-  }
+    inputElem.addEventListener('keypress', (event) => {
+      if (event.charCode === 13) {
+        addHero();
+      }
+    });
 
-  function addItem() {
-    const [, key, value] = inputElem.value.match(/(.*)[,\s-.](.*)/);
-    promiseStore.addItem(key, value);
-    refreshStore();
-  }
+    // this will add the hero in the main process
+    addButton.addEventListener('click', () => {
+      addHero();
+    });
 
-  window.addEventListener('load', () => {
-    refreshStore();
-  });
+    let intervalId;
+    startButton.addEventListener('click', () => {
 
-  inputElem.addEventListener('keypress', (event) => {
-    if (event.charCode === 13) {
-      addItem();
-    }
-  });
+      if (intervalId === undefined) {
+        startButton.textContent = "Stop";
+        heroSet.startAutoFill(1000); // updates the store in the main process
 
-  addButton.addEventListener('click', () => {
-    addItem();
-  });
-
-</script>
+        intervalId = setInterval(() => {
+          refreshSetAutomatically();
+        }, 2000)
+      } else {
+        heroSet.stopAutoFill();
+        clearInterval(intervalId);
+        intervalId = undefined;
+        startButton.textContent = "Start";
+      }
+    });
+  </script>
 </body>
+
 </html>
